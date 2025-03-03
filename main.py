@@ -5,12 +5,13 @@ from SerialArduino import SerialArduino
 import csv
 
 if __name__ == '__main__':
-    motor = Motor(com_port='COM3', baudrate=9600, step_size=1, speed=1)
-    hifu_pulse = SerialArduino(com_port='COM5', baudrate=9600, timeout=1)
-
+    motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
+    hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)
+    print('STARTING PROTOCOL')
     motor.home()
     print('HOMING COMPLETED')
     for x in range(200):
+        print(f'STARTING SCANLINE {x}')
         motor.move(100,0, 0)
         data = []
         for y in range(200):

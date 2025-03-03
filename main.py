@@ -21,7 +21,7 @@ if __name__ == '__main__':
             data.append(measurement)  # Append tuple to list
 
         # **Export Data to CSV**
-        csv_filename = f"measurement_data_{x}.csv"
+        csv_filename = f"Data/measurement_data_{str(x).zfill(3)}.csv"
         with open(csv_filename, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerows(data)  # Write collected data

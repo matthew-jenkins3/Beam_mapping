@@ -7,7 +7,7 @@ class Motor(SerialArduino):
         self.step_size = step_size # can be 1, 0.5, 0.25, or 0.125
         self.speed = speed # can be 1=1ms/step, 2=10ms/step, or 3=100ms/step
         self.is_hommed = False
-        self.show_serial_output = True # for debugging
+        self.show_serial_output = False # for debugging
 
     def home(self) -> None:
         # home x
@@ -68,20 +68,23 @@ class Motor(SerialArduino):
         z = abs(z)
 
         #move in x
-        cmd = comand_builder(motor='x',direction=x_direction, step_size=self.step_size, speed=self.speed, steps=x)
-        res = self.send_command(bytes(cmd, 'utf-8'))
-        if self.show_serial_output:
-            print(res)
+        if x != 0:
+            cmd = comand_builder(motor='x',direction=x_direction, step_size=self.step_size, speed=self.speed, steps=x)
+            res = self.send_command(bytes(cmd, 'utf-8'))
+            if self.show_serial_output:
+                print(res)
         #move in y
-        cmd = comand_builder(motor='y',direction=y_direction, step_size=self.step_size, speed=self.speed, steps=y)
-        res = self.send_command(bytes(cmd, 'utf-8'))
-        if self.show_serial_output:
-            print(res)
+        if y != 0:
+            cmd = comand_builder(motor='y',direction=y_direction, step_size=self.step_size, speed=self.speed, steps=y)
+            res = self.send_command(bytes(cmd, 'utf-8'))
+            if self.show_serial_output:
+                print(res)
         #move in z
-        cmd = comand_builder(motor='z',direction=z_direction, step_size=self.step_size, speed=self.speed, steps=z)
-        res = self.send_command(bytes(cmd, 'utf-8'))
-        if self.show_serial_output:
-            print(res)
+        if z != 0:
+            cmd = comand_builder(motor='z',direction=z_direction, step_size=self.step_size, speed=self.speed, steps=z)
+            res = self.send_command(bytes(cmd, 'utf-8'))
+            if self.show_serial_output:
+                print(res)
 
         if self.is_hommed == True:
             self.is_hommed = False

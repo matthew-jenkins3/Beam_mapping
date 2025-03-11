@@ -49,14 +49,14 @@ def protocol_002():
     name = '10v_FP133-02T'
 
     x_samples = 1 #number of samples in x
-    y_samples = 100 # number of samples in y
+    y_samples = 200 # number of samples in y
 
     x_steps = 100   # number of steps between samples in x
     y_steps = 100   # number of steps between samples in x
 
-    repeat_num = 10 # number of times the measurment will be re-taken
+    repeat_num = 5 # number of times the measurment will be re-taken
 
-    inital_position = (6000, 2500, 18000) #starting position of the hydrophone in steps (x,y,z)
+    inital_position = (6500, 0, 20100) #starting position of the hydrophone in steps (x,y,z)
 
     motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
     hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)

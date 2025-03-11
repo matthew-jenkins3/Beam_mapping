@@ -46,15 +46,17 @@ def protocol_001():
 
 def protocol_002():
 
-    x_samples = 100 #number of samples in x
+    name = '10v_FP133-02T'
+
+    x_samples = 1 #number of samples in x
     y_samples = 100 # number of samples in y
 
     x_steps = 100   # number of steps between samples in x
     y_steps = 100   # number of steps between samples in x
 
-    repeat_num = 100 # number of times the measurment will be re-taken
+    repeat_num = 10 # number of times the measurment will be re-taken
 
-    inital_position = (2500, 2500, 0) #starting position of the hydrophone in steps (x,y,z)
+    inital_position = (6000, 2500, 18000) #starting position of the hydrophone in steps (x,y,z)
 
     motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
     hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)
@@ -93,11 +95,12 @@ def protocol_002():
                 data_max[x][y][num] = max(measurement)
                 data_min[x][y][num] = min(measurement)
                 data_rms[x][y][num] = np.sqrt(np.mean(np.square(measurement)))
+                print(f'location: ({x},{y}) measurement number:{num} | max [V]: {max(measurement)} | min [V]: {min(measurement)} | RMS [v]: {np.sqrt(np.mean(np.square(measurement)))}')
         motor.move(0, -(y_samples*y_steps), 0) # return to the start of the scan line
 
-    np.save('data_max.npy', data_max)
-    np.save('data_min.npy', data_min)
-    np.save('data_rms.npy', data_rms)
+    np.save(f'data_max_{name}.npy', data_max)
+    np.save(f'data_min_{name}.npy', data_min)
+    np.save(f'data_rms_{name}.npy', data_rms)
 
 
 if __name__ == '__main__':

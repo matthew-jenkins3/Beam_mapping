@@ -6,7 +6,7 @@ from time import sleep
 from numpy.ma.core import array
 
 
-def take_mesurment(ip='172.16.43.168') -> (np.array, np.array):
+def take_mesurment(ip='172.16.43.168', debug=False) -> (np.array, np.array):
     """
     :param ip: IP of the Tektronix MDO4000 oscilisope
     :return: A tuple, with 2 np.arrays copntaining the data, and time points
@@ -14,7 +14,8 @@ def take_mesurment(ip='172.16.43.168') -> (np.array, np.array):
     rm = pyvisa.ResourceManager('@py')
     scope = rm.open_resource('TCPIP0::' + ip + '::inst0::INSTR')  # open the oscilloscope conn.
     scope.write('*IDN?')
-    print(scope.read())
+    if debug:
+        print(scope.read())
 
     scope.write('DAT:SOU CH1')  # source to transfer data from
     scope.write('DAT:ENC RIB')  # RIB format of data transfer (binary/ascii)

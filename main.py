@@ -46,7 +46,7 @@ def protocol_001():
 
 def protocol_002():
 
-    name = '10v_FP133-02T'
+    name = '20v_FP133-v2'
 
     x_samples = 1 #number of samples in x
     y_samples = 200 # number of samples in y

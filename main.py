@@ -1,6 +1,6 @@
 import numpy as np
 
-from xyz_positioner import Motor, locate_focus
+from xyz_positioner import Motor
 from TekronixMDO4000 import take_mesurment, exp_to_csv
 from SerialArduino import SerialArduino
 from time import sleep
@@ -45,7 +45,7 @@ def protocol_001():
         print(f"Data successfully saved to {csv_filename}")
         motor.move(0, -10000, 0)
 
-def protocol_002():
+def protocol_002(motor, hifu_pulse):
 
     name = '20v_FP133-v2'
 
@@ -59,8 +59,7 @@ def protocol_002():
 
     inital_position = (6000, 0, 20600) #starting position of the hydrophone in steps (x,y,z)
 
-    motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
-    hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)
+
 
     data_max = np.zeros((x_samples, y_samples, repeat_num)) # a 3d array holding the maximum pressure recorded at each location
     data_min = np.zeros((x_samples, y_samples, repeat_num)) # a 3d array holding the minmum pressure recorded at each location
@@ -107,5 +106,53 @@ def protocol_002():
     np.save(f'data_raw_{name}.npy', data_raw)
 
 
+def locate_focus(guess, motor_object, hifu_object, iterations=3) -> (int, int, int):
+    '''
+    pass this a tuple with a guess of (x,y,z) position in steps of the focus, and this function
+    will try to find the focus starting at the guess.
+
+    guess: (x,y,z)
+    motor_object: Motor object
+    hifu_object: Hifu object
+    interations: int how many times it will iterate (default is 3)
+    '''
+    max_x, max_y, max_z = guess
+    max_data_x = 0
+    max_data_y = 0
+    max_data_z = 0
+
+    for i in range(iterations):
+        # find the maximim in x around the guess
+        motor_object.move_to(max_x-(5000//(i+1)), max_y, max_z)
+        for x in range(100*(i+1)):
+            motor_object.move(100//(i+1), 0, 0)
+            measurement, t = take_mesurment()
+            if max(measurement) > max_data_x:
+                max_data_x = max(measurement)
+                (max_x, _, _) = motor_object.location()
+        # find the maximim in y around the guess
+        motor_object.move_to(max_x, max_y -(5000//(i + 1)), max_z)
+        for y in range(100*(i+1)):
+            motor_object.move(100//(i+1), 0, 0)
+            measurement, t = take_mesurment()
+            if max(measurement) > max_data_y:
+                max_data_y = max(measurement)
+                (_, max_y, _) = motor_object.location()
+        # find the maximim in z around the guess
+        motor_object.move_to(max_x, max_y , max_z -(5000//(i + 1)))
+        for z in range(100*(i+1)):
+            motor_object.move(100//(i+1), 0, 0)
+            measurement, t = take_mesurment()
+            if max(measurement) > max_data_z:
+                max_data_z = max(measurement)
+                (_, _, max_z) = motor_object.location()
+
+    return (max_x, max_y, max_z)
+
+
 if __name__ == '__main__':
-    protocol_002()
+    motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
+    hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)
+
+    locate_focus((6000, 7250, 20600), motor, hifu_pulse)
+    protocol_002(motor, hifu_pulse)

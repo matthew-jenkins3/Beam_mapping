@@ -127,7 +127,7 @@ class Motor(SerialArduino):
         pass
 
 # helper functions to build the strings that get sent to the arduino
-def comand_builder(motor, direction, step_size, speed, steps):
+def comand_builder(motor, direction, step_size, speed, steps) -> str:
     ''' This takes the motor parameters and retuns the string the arduino code is expecting'''
     command = ''
     if motor == 'x':
@@ -171,4 +171,5 @@ def home_command(motor) -> str:
         return '3\n'
     else:
         print("Passed an invalid motor")
+
 

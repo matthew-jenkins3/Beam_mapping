@@ -126,6 +126,7 @@ def locate_focus(guess, motor_object, hifu_object, iterations=3) -> (int, int, i
         motor_object.move_to(max_x-(5000//(i+1)), max_y, max_z)
         for x in range(100*(i+1)):
             motor_object.move(100//(i+1), 0, 0)
+            hifu_pulse.send_command(b'1')
             measurement, t = take_mesurment()
             if max(measurement) > max_data_x:
                 max_data_x = max(measurement)
@@ -134,6 +135,7 @@ def locate_focus(guess, motor_object, hifu_object, iterations=3) -> (int, int, i
         motor_object.move_to(max_x, max_y -(5000//(i + 1)), max_z)
         for y in range(100*(i+1)):
             motor_object.move(100//(i+1), 0, 0)
+            hifu_pulse.send_command(b'1')
             measurement, t = take_mesurment()
             if max(measurement) > max_data_y:
                 max_data_y = max(measurement)
@@ -142,6 +144,7 @@ def locate_focus(guess, motor_object, hifu_object, iterations=3) -> (int, int, i
         motor_object.move_to(max_x, max_y , max_z -(5000//(i + 1)))
         for z in range(100*(i+1)):
             motor_object.move(100//(i+1), 0, 0)
+            hifu_pulse.send_command(b'1')
             measurement, t = take_mesurment()
             if max(measurement) > max_data_z:
                 max_data_z = max(measurement)

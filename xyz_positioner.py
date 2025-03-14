@@ -47,7 +47,7 @@ class Motor(SerialArduino):
         else:
             print(" direction cannot be determined")
             return
-        x = abs(x)
+        x_steps = abs(x)
 
         if y >= 0:
             y_direction = 'forward'
@@ -56,7 +56,7 @@ class Motor(SerialArduino):
         else:
             print(" direction cannot be determined")
             return
-        y = abs(y)
+        y_steps = abs(y)
 
         if z >= 0:
             z_direction = 'forward'
@@ -65,23 +65,23 @@ class Motor(SerialArduino):
         else:
             print(" direction cannot be determined")
             return
-        z = abs(z)
+        z_steps = abs(z)
 
         #move in x
         if x != 0:
-            cmd = comand_builder(motor='x',direction=x_direction, step_size=self.step_size, speed=self.speed, steps=x)
+            cmd = comand_builder(motor='x',direction=x_direction, step_size=self.step_size, speed=self.speed, steps=x_steps)
             res = self.send_command(bytes(cmd, 'utf-8'))
             if self.show_serial_output:
                 print(res)
         #move in y
         if y != 0:
-            cmd = comand_builder(motor='y',direction=y_direction, step_size=self.step_size, speed=self.speed, steps=y)
+            cmd = comand_builder(motor='y',direction=y_direction, step_size=self.step_size, speed=self.speed, steps=y_steps)
             res = self.send_command(bytes(cmd, 'utf-8'))
             if self.show_serial_output:
                 print(res)
         #move in z
         if z != 0:
-            cmd = comand_builder(motor='z',direction=z_direction, step_size=self.step_size, speed=self.speed, steps=z)
+            cmd = comand_builder(motor='z',direction=z_direction, step_size=self.step_size, speed=self.speed, steps=z_steps)
             res = self.send_command(bytes(cmd, 'utf-8'))
             if self.show_serial_output:
                 print(res)
@@ -171,3 +171,4 @@ def home_command(motor) -> str:
         return '3\n'
     else:
         print("Passed an invalid motor")
+

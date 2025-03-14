@@ -1,6 +1,6 @@
 import numpy as np
 
-from xyz_positioner import Motor
+from xyz_positioner import Motor, locate_focus
 from TekronixMDO4000 import take_mesurment, exp_to_csv
 from SerialArduino import SerialArduino
 from time import sleep
@@ -57,9 +57,7 @@ def protocol_002():
 
     repeat_num = 5 # number of times the measurment will be re-taken
 
-    inital_position = (6000, 0, 20100) #starting position of the hydrophone in steps (x,y,z)
-
-    now = datetime.now()
+    inital_position = (6000, 0, 20600) #starting position of the hydrophone in steps (x,y,z)
 
     motor = Motor(com_port='COM8', baudrate=9600, step_size=1, speed=1)
     hifu_pulse = SerialArduino(com_port='COM7', baudrate=9600, timeout=1)
@@ -103,10 +101,10 @@ def protocol_002():
                 print(f'location: ({x},{y}) measurement number:{num} | max [V]: {max(measurement)} | min [V]: {min(measurement)} | RMS [v]: {np.sqrt(np.mean(np.square(measurement)))}')
         motor.move(0, -(y_samples*y_steps), 0) # return to the start of the scan line
 
-    np.save(f'{now.strftime("%d%m%Y")}/data_max_{name}.npy', data_max)
-    np.save(f'{now.strftime("%d%m%Y")}/data_min_{name}.npy', data_min)
-    np.save(f'{now.strftime("%d%m%Y")}/data_rms_{name}.npy', data_rms)
-    np.save(f'{now.strftime("%d%m%Y")}/data_raw_{name}.npy', data_raw)
+    np.save(f'data_max_{name}.npy', data_max)
+    np.save(f'data_min_{name}.npy', data_min)
+    np.save(f'data_rms_{name}.npy', data_rms)
+    np.save(f'data_raw_{name}.npy', data_raw)
 
 
 if __name__ == '__main__':

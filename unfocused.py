@@ -18,6 +18,55 @@ Hardware (as tested 16-17 Nov 2026):
   FOHS Signal out -> scope CH1 (script sets 50 ohm)
   Motor Arduino COM3. Generator amplitude is set BY HAND when the script asks.
 """
+
+import time, csv, os, numpy as np, serial, pyvisa
+
+# ---- setup (run once) ----
+SCOPE_IP, TRIG_PORT = '172.16.43.175', 'COM5'   # check these on this PC
+SENS = None          # mV/MPa from FOHS @ 0.48 MHz (None = mV only)
+F0 = 480e3
+scope = pyvisa.ResourceManager('@py').open_resource(f'TCPIP0::{SCOPE_IP}::inst0::INSTR'); scope.timeout = 15000
+for c in ['CH1:TER FIFTY','TRIG:A:EDGE:SOU CH2','TRIG:A:LEV:CH2 1.5','TRIG:A:MOD NORM',
+          'HOR:SCA 20E-6','HOR:POS 10','HOR:RECO 10000',
+          'DAT:SOU CH1','DAT:ENC RIB','WFMO:BYT_N 2','DAT:STAR 1','DAT:STOP 10000']:
+    scope.write(c)
+ard = serial.Serial(TRIG_PORT, 9600, timeout=1); time.sleep(2.5)
+os.makedirs('data_hydro', exist_ok=True)
+
+def measure(vpp, vrms=None, n=5, tx='T5', d_mm=18.3, csv_path='data_hydro/T5_power.csv'):
+    """Fire n bursts, read CH1, print + save p+/p- (steady-state cycles 8-14)."""
+    rows = []
+    for k in range(n):
+        scope.write('ACQ:STOPA SEQ'); scope.write('ACQ:STATE RUN'); time.sleep(0.15)
+        ard.write(b'1'); t0 = time.time()
+        while scope.query('ACQ:STATE?').strip() == '1':
+            if time.time() - t0 > 5: raise TimeoutError('no trigger - check Arduino -> CH2')
+            time.sleep(0.02)
+        raw = scope.query_binary_values('CURV?', datatype='h', is_big_endian=True, container=np.array)
+        ymu, yof, yze, dt, tz = (float(scope.query(q)) for q in ('WFMO:YMU?','WFMO:YOF?','WFMO:YZE?','WFMO:XINCR?','WFMO:XZE?'))
+        v = (raw - yof) * ymu + yze; t = tz + np.arange(v.size) * dt
+        x = v - np.median(v[t < 0]); noise = np.std(v[t < 0])
+        m = int(round(1 / (F0 * dt))); env = np.lib.stride_tricks.sliding_window_view(np.abs(x), m).max(axis=1)
+        t2 = t[:env.size]; pk = env[t2 > 0].max()
+        if pk > 0.95 * 5 * float(scope.query('CH1:SCA?')): print('  ! CLIPPED - increase CH1 V/div on the scope')
+        ta = t2[np.argmax((env > 0.2 * pk) & (t2 > 0))]
+        g = (t >= ta + 8 / F0) & (t <= ta + 14 / F0)
+        pp, pm = x[g].max() * 1e3, x[g].min() * 1e3
+        rows.append([tx, d_mm, vpp, vrms, k, ta * 1e6, pp, pm, pp / SENS if SENS else '', pm / SENS if SENS else '', 20*np.log10(pk/noise)])
+        np.save(f'data_hydro/{tx}_{vpp:g}Vpp_shot{k}.npy', np.vstack([t, v]))
+    new = not os.path.exists(csv_path)
+    with open(csv_path, 'a', newline='') as f:
+        w = csv.writer(f)
+        if new: w.writerow(['tx','d_mm','vpp','vrms','shot','t_arr_us','p_plus_mV','p_minus_mV','p_plus_MPa','p_minus_MPa','snr_db'])
+        w.writerows(rows)
+    r = np.array([[q[5], q[6], q[7]] for q in rows])
+    msg = f'{vpp:g} Vpp: arrival {r[:,0].mean():.1f} us | p+ {r[:,1].mean():.1f} mV | p- {r[:,2].mean():.1f} mV (sd {r[:,2].std():.1f})'
+    if SENS: msg += f' | p+ {r[:,1].mean()/SENS:.3f} / p- {r[:,2].mean()/SENS:.3f} MPa'
+    print(msg)
+
+
+
+"""
 import argparse, csv, json, os, sys, time
 from datetime import datetime
 import numpy as np
@@ -122,7 +171,7 @@ class Trigger:
 
 # ------------------------------ analysis ------------------------------
 def analyze(v, t):
-    """Burst arrival, steady-state p+/p- (V), SNR. Uses cycles 8-14 of the burst (before echoes)."""
+    #Burst arrival, steady-state p+/p- (V), SNR. Uses cycles 8-14 of the burst (before echoes).
     pre = v[t < 0] if np.any(t < 0) else v[: v.size // 20]
     base, noise = np.median(pre), max(np.std(pre), 1e-12)
     x = v - base
@@ -207,7 +256,7 @@ class Rig:
 
     # --- measurement
     def shoot(self, scan, keep=True, repeats=N_REPEATS):
-        """N repeats at the current point with auto-ranging. Returns list of analysis dicts."""
+        #N repeats at the current point with auto-ranging. Returns list of analysis dicts.
         res = []
         for k in range(repeats):
             for _ in range(6):
@@ -256,7 +305,7 @@ class Rig:
         return best, vals.max(), i in (0, len(xs) - 1)
 
     def centre(self, span=CENTRE_SPAN_MM, step=0.5, scan='centre'):
-        """Coarse (+/- 2*span, 1 mm) then fine (+/- span/2, step) search on each lateral axis."""
+        #Coarse (+/- 2*span, 1 mm) then fine (+/- span/2, step) search on each lateral axis.
         for k, ax in enumerate(LATERAL_AXES):
             c = self.pos()[k]
             b, pk, edge = self._line_peak(k, np.arange(c - 2 * span, c + 2 * span + 1e-9, 1.0), scan)
@@ -318,9 +367,6 @@ def report(name, res):
 def mode_jog(rig):
     rig.set_reference(ask_float('Current distance from face (mm) - rough is fine', 30.0))
     c = c_water(WATER_TEMP_C)
-    print("""Commands:  x 1 | y -0.5 | d 20 (go to distance) | f (fire+analyse) | c (auto-centre)
-           a (find last axial max) | setd 18.3 (declare current distance) | tof (ToF distance)
-           cal (move +5 mm, compare ToF -> checks steps/mm) | p (position) | q (quit)""")
     while True:
         cmd = input('jog> ').strip().split()
         if not cmd: continue
@@ -441,3 +487,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+"""

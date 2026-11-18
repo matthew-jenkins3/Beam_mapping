@@ -2,7 +2,7 @@ import serial
 import time
 
 class SerialArduino:
-    def __init__(self, com_port='COM3', baudrate=9600, timeout=None):
+    def __init__(self, com_port='COM5', baudrate=9600, timeout=None):
         self.com_port=com_port
         self.baudrate=baudrate
         self.timeout=timeout

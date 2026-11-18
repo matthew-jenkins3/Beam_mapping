@@ -6,7 +6,7 @@ from time import sleep
 from numpy.ma.core import array
 
 
-def take_mesurment(ip='172.16.43.168', debug=False) -> (np.array, np.array):
+def take_mesurment(ip='172.16.43.175', debug=False) -> (np.array, np.array):
     """
     :param ip: IP of the Tektronix MDO4000 oscilisope
     :return: A tuple, with 2 np.arrays copntaining the data, and time points
